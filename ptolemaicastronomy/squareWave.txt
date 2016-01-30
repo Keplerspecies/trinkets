@@ -1,0 +1,72 @@
+int w = 900, h =700, fr = 200;
+boolean pause = false, showTrail = true, trailLines = false;
+float orbitScalar = 1, angleSlice = 5,
+trailMargin = .25;
+int[] defaultStroke = {0,0,0,255};
+int[] defaultFill = {0,0,0,255};
+int trailLen = 1000;
+P earth, moon, merc, venus, sun, mars, jptr, strn;
+P merc2, merc3, merc4, merc5, merc6, merc7, merc8, merc9, merc10;
+
+Cycle mercCy, mercCy2, mercCy3, mercCy4, 
+mercCy5, mercCy6, mercCy7, mercCy8, mercCy9, mercCy10;
+
+//Ptolemy ratio details
+//Moon orbit - 48*earth-radii, merc - 115, Venus, 622.5, 
+//Sun, 1210, Mar, 5040, Jupiter, 11,504, Saturn 17026,
+//fixed stars, 20000
+
+void setup(){
+  size(w,h);
+  frameRate(fr);
+  earth = new P(w/2, h/2);
+  
+  float size = 200;
+  
+  //trying to reconstruct a square wave
+  //NOTE: children collect rotation from parents
+  // (can be removed with a negative);
+  merc = new P(earth);merc.translate(size*orbitScalar, 0);
+  mercCy = new Cycle(earth, merc);mercCy.setAngle(1);
+  
+  merc2 = new P(merc);merc2.translate(size/3.0*orbitScalar, 0);
+  mercCy2 = new Cycle(merc, merc2);mercCy2.setAngle(3);
+
+  merc3 = new P(merc2);merc3.translate(size/5.0*orbitScalar, 0);
+  mercCy3 = new Cycle(merc2, merc3);mercCy3.setAngle(5);
+  
+  merc4 = new P(merc3);merc4.translate(size/7.0*orbitScalar, 0);
+  mercCy4 = new Cycle(merc3, merc4);mercCy4.setAngle(7);
+  
+  merc5 = new P(merc4);merc5.translate(size/9.0*orbitScalar, 0);
+  mercCy5 = new Cycle(merc4, merc5);mercCy5.setAngle(9);
+  
+  merc6 = new P(merc5);merc6.translate(size/11.0*orbitScalar, 0);
+  mercCy6 = new Cycle(merc5, merc6);mercCy6.setAngle(11);
+  
+  merc7 = new P(merc6);merc7.translate(size/13.0*orbitScalar, 0);
+  mercCy7 = new Cycle(merc6, merc7);mercCy7.setAngle(13);
+  
+  merc8 = new P(merc7);merc8.translate(size/15.0*orbitScalar, 0);
+  mercCy8 = new Cycle(merc7, merc8);mercCy8.setAngle(15);
+  
+  merc9 = new P(merc8);merc9.translate(size/17.0*orbitScalar, 0);
+  mercCy9 = new Cycle(merc8, merc9);mercCy9.setAngle(17);
+  
+  merc10 = new P(merc9);merc10.translate(size/19.0*orbitScalar, 0);
+  mercCy10 = new Cycle(merc9, merc10);mercCy10.setAngle(19);
+  mercCy10.setPlanet();
+  
+  mercCy10.dfrnt.setSize(2);
+  mercCy9.addEpi(mercCy10);
+  mercCy8.addEpi(mercCy9);
+  mercCy7.addEpi(mercCy8);
+  mercCy6.addEpi(mercCy7);
+  mercCy5.addEpi(mercCy6);
+  mercCy4.addEpi(mercCy5);
+  mercCy3.addEpi(mercCy4);
+  mercCy2.addEpi(mercCy3);
+  mercCy.addEpi(mercCy2);
+  
+  background(235);
+}
