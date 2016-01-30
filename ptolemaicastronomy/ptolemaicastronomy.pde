@@ -1,14 +1,15 @@
-int w = 700, h = 500, fr = 3;
-boolean pause = false, showTrail = true;
-float orbitScalar = 1;
+int w = 900, h =700, fr = 200;
+boolean pause = false, showTrail = true, trailLines = false;
+float orbitScalar = 1, angleSlice = 5,
+trailMargin = .25;
 int[] defaultStroke = {0,0,0,255};
 int[] defaultFill = {0,0,0,255};
-int trailLen = 500;
+int trailLen = 1000;
 P earth, moon, merc, venus, sun, mars, jptr, strn;
-P merc2;
-P merc3;
-P mercEqnt;
-Cycle mercCy, mercCy2, mercCy3;
+P merc2, merc3, merc4, merc5, merc6, merc7, merc8, merc9, merc10;
+
+Cycle mercCy, mercCy2, mercCy3, mercCy4, 
+mercCy5, mercCy6, mercCy7, mercCy8, mercCy9, mercCy10;
 
 //Ptolemy ratio details
 //Moon orbit - 48*earth-radii, merc - 115, Venus, 622.5, 
@@ -19,22 +20,51 @@ void setup(){
   size(w,h);
   frameRate(fr);
   earth = new P(w/2, h/2);
-  merc = new P(earth);
-  merc.translate(-115*orbitScalar, 0);
-  mercEqnt = new P(earth);
-  mercEqnt.translate(0, -60*orbitScalar);
-  mercCy = new Cycle(earth, mercEqnt, merc);
-  merc2 = new P(merc);
-  merc2.translate(0, -60*orbitScalar);
-  mercCy2 = new Cycle(merc, merc2);
-  mercCy2.setAngle(1);
-  mercCy2.getDfrnt().setSize(5);
-  merc3 = new P(merc2);
-  merc3.translate(0, -10*orbitScalar);
-  mercCy3 = new Cycle(merc2, merc3);
-  mercCy3.setAngle(1);
-  mercCy3.setPlanet();
-  mercCy3.getDfrnt().setSize(2);
+  
+  float size = 200;
+  
+  //trying to reconstruct a square wave
+  //NOTE: children collect rotation from parents
+  // (can be removed with a negative);
+  merc = new P(earth);merc.translate(size*orbitScalar, 0);
+  mercCy = new Cycle(earth, merc);mercCy.setAngle(1);
+  
+  merc2 = new P(merc);merc2.translate(size/3.0*orbitScalar, 0);
+  mercCy2 = new Cycle(merc, merc2);mercCy2.setAngle(3);
+
+  merc3 = new P(merc2);merc3.translate(size/5.0*orbitScalar, 0);
+  mercCy3 = new Cycle(merc2, merc3);mercCy3.setAngle(5);
+  
+  merc4 = new P(merc3);merc4.translate(size/7.0*orbitScalar, 0);
+  mercCy4 = new Cycle(merc3, merc4);mercCy4.setAngle(7);
+  
+  merc5 = new P(merc4);merc5.translate(size/9.0*orbitScalar, 0);
+  mercCy5 = new Cycle(merc4, merc5);mercCy5.setAngle(9);
+  
+  merc6 = new P(merc5);merc6.translate(size/11.0*orbitScalar, 0);
+  mercCy6 = new Cycle(merc5, merc6);mercCy6.setAngle(11);
+  
+  merc7 = new P(merc6);merc7.translate(size/13.0*orbitScalar, 0);
+  mercCy7 = new Cycle(merc6, merc7);mercCy7.setAngle(13);
+  
+  merc8 = new P(merc7);merc8.translate(size/15.0*orbitScalar, 0);
+  mercCy8 = new Cycle(merc7, merc8);mercCy8.setAngle(15);
+  
+  merc9 = new P(merc8);merc9.translate(size/17.0*orbitScalar, 0);
+  mercCy9 = new Cycle(merc8, merc9);mercCy9.setAngle(17);
+  
+  merc10 = new P(merc9);merc10.translate(size/19.0*orbitScalar, 0);
+  mercCy10 = new Cycle(merc9, merc10);mercCy10.setAngle(19);
+  mercCy10.setPlanet();
+  
+  mercCy10.dfrnt.setSize(2);
+  mercCy9.addEpi(mercCy10);
+  mercCy8.addEpi(mercCy9);
+  mercCy7.addEpi(mercCy8);
+  mercCy6.addEpi(mercCy7);
+  mercCy5.addEpi(mercCy6);
+  mercCy4.addEpi(mercCy5);
+  mercCy3.addEpi(mercCy4);
   mercCy2.addEpi(mercCy3);
   mercCy.addEpi(mercCy2);
   
@@ -55,7 +85,14 @@ void keyPressed(){
     pause = !pause;
   } 
   if(key == 't'){
-    showTrail = !showTrail; 
+    if(!showTrail && !trailLines)
+      showTrail = true; 
+    else if(showTrail && !trailLines)
+      trailLines = true;
+    else{
+      showTrail = false;
+      trailLines = false;
+    }
   }
 }
 
@@ -72,6 +109,7 @@ class Cycle{
  private float rad;
  private int ctrS;
  private float angle, prevAngle; //part of the circle that is moved every increment (max 360)
+ private float angleSum;
  private ArrayList epis, trail;
  private boolean isPlanet;
  private int curPlanet;
@@ -126,6 +164,11 @@ class Cycle{
  public boolean isPlanet(){
    return isPlanet; 
  }
+  private void addPlanet(P p){
+   if(trail.size() > trailLen)
+     trail.remove(0);
+   trail.add(new P(p));
+ }
  
  private float angleFromEqnt(){
     //c = center, d = deferent, e = equant, f = new location, g = intersection of EF and CD
@@ -167,45 +210,57 @@ class Cycle{
    return dcf;
  }
  
- private void updateEpis(){
-   float dcf = angleFromEqnt();
+ private void rotateCycle(float dcf, P o){
+   P dfrntS = new P(dfrnt);
+   dfrnt.rotate(dcf, o);
+   float x = dfrnt.getX() - dfrntS.getX();
+   float y = dfrnt.getY() - dfrntS.getY();
+   translateCycle(x, y);
    for(int i = 0; i < epis.size(); i++){
       Cycle c = (Cycle)epis.get(i);
-      P cd = c.getDfrnt(); P ce = c.getEqnt(); P cc = c.getCtr();
-      cc.rotate(dcf, ctr); ce.rotate(dcf, ctr); cd.rotate(dcf, ctr);
-      cd.rotate(c.angleFromEqnt(), cc);
-      c.updateEpis();
+      dcf = c.angleFromEqnt();
+      c.rotateCycle(dcf, c.ctr);
    }
  }
  
- //TODO: to fix bi-epicyclic, make sure rotation happens for whole recursive brance
- private void drawEpis(){
+ private void translateCycle(float x, float y){
    for(int i = 0; i < epis.size(); i++){
-     
-      Cycle c = (Cycle)epis.get(i);
-      if(c.isPlanet()){
-        c.addPlanet(c.getDfrnt());
-        c.drawTrail(); 
-      }
-      P cd = c.getDfrnt(); P ce = c.getEqnt(); P cc = c.getCtr();
-      cc.draw(); ce.draw(); cd.draw();
-      noFill();
-      ellipse(cc.getX(), cc.getY(), c.getRad()*2, c.getRad()*2);
-      defFill();
-      c.drawEpis();
+     Cycle c = (Cycle)epis.get(i);
+     c.ctr.translate(x, y);
+     c.eqnt.translate(x, y);
+     c.dfrnt.translate(x, y);
+     c.translateCycle(x, y); 
    }
  }
  
- private void addPlanet(P p){
-   if(trail.size() > trailLen)
-     trail.remove(0);
-   trail.add(new P(p));
+ public void draw(){
+    ctr.draw();
+    eqnt.draw();
+    dfrnt.draw();
+    noFill();
+    ellipse(ctr.x, ctr.y, rad*2, rad*2);
+    defFill();
+    if(isPlanet()){
+      addPlanet(dfrnt);
+      if(showTrail)
+        drawTrail();
+    }
+    for(int i = 0; i < epis.size(); i++){
+      Cycle c = (Cycle)epis.get(i);
+      c.draw();
+    }
  }
  
  private void drawTrail(){
     for(int i = 0; i < trail.size(); i++){
       P p = (P)trail.get(i);
+      //p.setX(i*w*trailMargin/trailLen);
+      //p.setY(i/4);
       p.draw();
+      if(trailLines && i != trail.size()-1 ){
+        P p2 = (P)trail.get(i+1);
+        line(p.getX(), p.getY(), p2.getX(), p2.getY());
+      }
     }
  }
  
@@ -220,25 +275,14 @@ class Cycle{
  
  public void update(){
    if(isPlanet){
-     addPlanet(dfrnt);
      drawTrail(); 
    }
    //consider incorporating with updateEpis (for trails, etc)
    //should just be a recursive call
-   updateEpis();
-   float dcf  = angleFromEqnt();
-   dfrnt.rotate(dcf, ctr);
+   float dcf = angleFromEqnt();
+   rotateCycle(dcf, ctr);
  }
- public void draw(){
-   //center should(?) already be drawn
-   ctr.draw();
-   eqnt.draw();
-   dfrnt.draw();
-   noFill();
-   ellipse(ctr.getX(), ctr.getY(), rad*2, rad*2);
-   defFill();
-   drawEpis();
- }
+
 }
 
 private class P{
@@ -288,8 +332,8 @@ private class P{
   public void rotate(float angle){
     //simulate rotation matrix
     //(matrix multiplication for the lazy)
-    float sin = sin(radians(angle));
-    float cos = cos(radians(angle));
+    float sin = sin(radians(angle/angleSlice));
+    float cos = cos(radians(angle/angleSlice));
     float nx = cos*x - sin*y;
     float ny = sin*x + cos*y;
     x = nx;
@@ -297,6 +341,9 @@ private class P{
   }
   
   public void rotate(float angle, P origin){
+    if(origin == this){
+      origin = new P(origin); 
+    }
     translate(-origin.getX(), -origin.getY());
     rotate(angle);
     translate(origin.getX(), origin.getY());
